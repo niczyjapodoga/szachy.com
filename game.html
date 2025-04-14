@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gra w Szachy</title>
     <style>
-        /* Tutaj stylizujemy stronę gry w szachy */
+        /* Stylizowanie strony z szachownicą */
     </style>
 </head>
 <body>
@@ -22,24 +22,30 @@
 </section>
 
 <script>
-// Przykład: z wykorzystaniem WebSocket
+// Pobieramy kod zaproszenia z URL
 const inviteCode = new URLSearchParams(window.location.search).get("inviteCode");
-const socket = new WebSocket('ws://twoj-serwer-websocket');  // Twój serwer WebSocket
 
+// Przykładowa konfiguracja WebSocket
+const socket = new WebSocket('ws://twoj-serwer-websocket'); // Zastąp odpowiednim serwerem
+
+// Otwarcie połączenia
 socket.onopen = function() {
-    console.log("Połączono z serwerem");
+    console.log("Połączono z serwerem WebSocket.");
 
-    // Wysyłanie kodu zaproszenia do serwera
+    // Wyślij kod zaproszenia do serwera
     socket.send(JSON.stringify({ type: 'join_game', code: inviteCode }));
 };
 
+// Obsługuje wiadomości z serwera
 socket.onmessage = function(event) {
     const data = JSON.parse(event.data);
-    
+
     if (data.type === 'game_start') {
-        // Inicjowanie szachownicy
+        // Rozpoczynamy grę
         generateChessboard();
     }
+
+    // Możesz tu również dodać logikę do aktualizowania szachownicy o ruchy graczy
 };
 
 // Funkcja generująca szachownicę
