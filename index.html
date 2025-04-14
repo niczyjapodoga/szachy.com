@@ -16,30 +16,6 @@
             color: white;
             padding: 15px;
         }
-        .chessboard {
-            display: grid;
-            grid-template-columns: repeat(8, 50px);
-            grid-template-rows: repeat(8, 50px);
-            gap: 1px;
-            margin: 20px auto;
-            width: 408px;
-            height: 408px;
-        }
-        .square {
-            width: 50px;
-            height: 50px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-        }
-        .black {
-            background-color: #000;
-            color: white;
-        }
-        .white {
-            background-color: #fff;
-        }
         .button {
             background-color: #4CAF50;
             color: white;
@@ -52,28 +28,6 @@
         .button:hover {
             background-color: #45a049;
         }
-        .invite-section {
-            margin-top: 20px;
-        }
-        .invite-code {
-            font-weight: bold;
-            color: #007BFF;
-        }
-        .join-game-section {
-            margin-top: 20px;
-        }
-        #joinMessage {
-            color: green;
-            font-weight: bold;
-        }
-        input[type="text"] {
-            padding: 10px;
-            font-size: 16px;
-            margin-top: 10px;
-            width: 250px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
     </style>
 </head>
 <body>
@@ -83,14 +37,7 @@
 </header>
 
 <section>
-    <h2>Szachownica</h2>
-    <div class="chessboard" id="chessboard">
-        <!-- Szachownica będzie generowana dynamicznie -->
-    </div>
-</section>
-
-<section class="invite-section">
-    <h3>Stwórz zaproszenie do gry:</h3>
+    <h2>Stwórz zaproszenie do gry:</h2>
     <button class="button" onclick="generateInviteCode()">Stwórz zaproszenie</button>
     <p id="inviteCode"></p>
 </section>
@@ -113,27 +60,6 @@ function generateInviteCode() {
     localStorage.setItem('inviteCode', inviteCode);
 }
 
-// Funkcja do generowania szachownicy
-function generateChessboard() {
-    const chessboard = document.getElementById('chessboard');
-    let isBlack = false;
-
-    for (let i = 0; i < 64; i++) {
-        const square = document.createElement('div');
-        square.classList.add('square');
-        if (isBlack) {
-            square.classList.add('black');
-        } else {
-            square.classList.add('white');
-        }
-        chessboard.appendChild(square);
-        isBlack = !isBlack;
-        if (i % 8 === 7) {
-            isBlack = !isBlack;
-        }
-    }
-}
-
 // Funkcja do dołączania do gry
 function joinGame() {
     const inputCode = document.getElementById('inviteInput').value.trim().toUpperCase();
@@ -147,11 +73,6 @@ function joinGame() {
         document.getElementById('joinMessage').style.color = "red";
     }
 }
-
-// Inicjalizacja szachownicy po załadowaniu strony
-window.onload = function() {
-    generateChessboard();
-};
 </script>
 
 </body>
