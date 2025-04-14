@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gra w Szachy</title>
+    <style>
+        /* Tutaj stylizujemy stronę gry w szachy */
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Gra w Szachy - Twoja gra z przeciwnikiem</h1>
+</header>
+
+<section>
+    <h2>Szachownica</h2>
+    <div class="chessboard" id="chessboard">
+        <!-- Szachownica będzie generowana dynamicznie -->
+    </div>
+</section>
+
+<script>
+// Przykład: z wykorzystaniem WebSocket
+const inviteCode = new URLSearchParams(window.location.search).get("inviteCode");
+const socket = new WebSocket('ws://twoj-serwer-websocket');  // Twój serwer WebSocket
+
+socket.onopen = function() {
+    console.log("Połączono z serwerem");
+
+    // Wysyłanie kodu zaproszenia do serwera
+    socket.send(JSON.stringify({ type: 'join_game', code: inviteCode }));
+};
+
+socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    
+    if (data.type === 'game_start') {
+        // Inicjowanie szachownicy
+        generateChessboard();
+    }
+};
+
+// Funkcja generująca szachownicę
+function generateChessboard() {
+    const chessboard = document.getElementById('chessboard');
+    let isBlack = false;
+
+    for (let i = 0; i < 64; i++) {
+        const square = document.createElement('div');
+        square.classList.add('square');
+        if (isBlack) {
+            square.classList.add('black');
+        } else {
+            square.classList.add('white');
+        }
+        chessboard.appendChild(square);
+        isBlack = !isBlack;
+        if (i % 8 === 7) {
+            isBlack = !isBlack;
+        }
+    }
+}
+</script>
+
+</body>
+</html>
