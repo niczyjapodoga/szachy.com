@@ -3,76 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biedne Chess</title>
+    <title>Geometry Dash - Prosta Gra</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            color: #333;
-            text-align: center;
+            margin: 0;
+            overflow: hidden;
+            background-color: #222;
         }
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-        }
-        .button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        .button:hover {
-            background-color: #45a049;
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #000;
         }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Biedne Chess - Graj w szachy online</h1>
-</header>
-
-<section>
-    <h2>Stwórz zaproszenie do gry:</h2>
-    <button class="button" onclick="generateInviteCode()">Stwórz zaproszenie</button>
-    <p id="inviteCode"></p>
-</section>
-
-<section class="join-game-section">
-    <h3>Dołącz do gry:</h3>
-    <p>Wprowadź kod zaproszenia, aby dołączyć do gry:</p>
-    <input type="text" id="inviteInput" placeholder="Wpisz kod zaproszenia">
-    <button class="button" onclick="joinGame()">Dołącz</button>
-    <p id="joinMessage"></p>
-</section>
+<canvas id="gameCanvas"></canvas>
 
 <script>
-// Funkcja do generowania zaproszenia
-function generateInviteCode() {
-    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    document.getElementById('inviteCode').innerText = "Twój kod zaproszenia: " + inviteCode;
+// Ustawienia gry
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-    // Zapisz kod zaproszenia do localStorage
-    localStorage.setItem('inviteCode', inviteCode);
+// Ustawienia rozmiaru canvas
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Gracz
+const player = {
+    x: 50,
+    y: canvas.height - 150,
+    width: 50,
+    height: 50,
+    color: '#00FF00',
+    gravity: 1,
+    lift: -20,
+    velocity: 0,
+    jumping: false
+};
+
+// Przeszkody
+let obstacles = [];
+let score = 0;
+
+// Funkcja do rysowania gracza
+function drawPlayer() {
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
 }
 
-// Funkcja do dołączania do gry
-function joinGame() {
-    const inputCode = document.getElementById('inviteInput').value.trim().toUpperCase();
-    const inviteCode = localStorage.getItem('inviteCode'); // Pobierz zaproszenie z localStorage
+// Funkcja do generowania przeszkód
+function createObstacle() {
+    const height = Math.random() * (canvas.height / 2) + 20;
+    const gap = 200;
+    obstacles.push({ x: canvas.width, y: canvas.height - height, width: 20, height: height, gap: gap });
+}
 
-    if (inputCode === inviteCode) {
-        // Jeśli kod jest poprawny, przekierowanie na stronę gry
-        window.location.href = "game.html?inviteCode=" + inputCode;  // Link do strony gry
-    } else {
-        document.getElementById('joinMessage').innerText = "Niepoprawny kod zaproszenia. Spróbuj ponownie.";
-        document.getElementById('joinMessage').style.color = "red";
+// Funkcja do rysowania przeszkód
+function drawObstacles() {
+    obstacles.forEach(obstacle => {
+        ctx.fillStyle = '#FF0000';
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        ctx.fillRect(obstacle.x, obstacle.y - obstacle.gap, obstacle.width, canvas.height - (obstacle.y - obstacle.gap));
+    });
+}
+
+// Funkcja do poruszania przeszkodami
+function moveObstacles() {
+    obstacles.forEach(obstacle => {
+        obstacle.x -= 5;
+    });
+    // Usuwanie przeszkód, które są poza ekranem
+    obstacles = obstacles.filter(obstacle => obstacle.x + obstacle.width > 0);
+}
+
+// Funkcja do wykrywania kolizji
+function detectCollisions() {
+    obstacles.forEach(obstacle => {
+        if (player.x + player.width > obstacle.x && player.x < obstacle.x + obstacle.width) {
+            if (player.y + player.height > obstacle.y || player.y < obstacle.y - obstacle.gap) {
+                gameOver();
+            }
+        }
+    });
+}
+
+// Funkcja do obsługi skakania
+function jump() {
+    if (!player.jumping) {
+        player.velocity = player.lift;
+        player.jumping = true;
     }
 }
+
+// Funkcja do aktualizacji pozycji gracza
+function updatePlayer() {
+    if (player.y + player.height < canvas.height) {
+        player.velocity += player.gravity;
+    } else {
+        player.velocity = 0;
+        player.jumping = false;
+        player.y = canvas.height - player.height;
+    }
+    player.y += player.velocity;
+}
+
+// Funkcja do rysowania wyniku
+function drawScore() {
+    ctx.font = '30px Arial';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('Wynik: ' + score, 20, 40);
+}
+
+// Funkcja kończąca grę
+function gameOver() {
+    cancelAnimationFrame(animationId);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#FF0000';
+    ctx.font = '50px Arial';
+    ctx.fillText('KONIEC GRY', canvas.width / 2 - 150, canvas.height / 2);
+    ctx.font = '30px Arial';
+    ctx.fillText('Twój wynik: ' + score, canvas.width / 2 - 90, canvas.height / 2 + 50);
+}
+
+// Funkcja do animacji
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawPlayer();
+    drawObstacles();
+    moveObstacles();
+    updatePlayer();
+    detectCollisions();
+    drawScore();
+
+    // Zwiększ wynik
+    score++;
+
+    if (score % 100 === 0) {
+        createObstacle();
+    }
+
+    animationId = requestAnimationFrame(animate);
+}
+
+// Słuchanie zdarzenia na skakanie (kliknięcie lub wciśnięcie spacji)
+document.addEventListener('keydown', (event) => {
+    if (event.key === ' ' || event.key === 'ArrowUp') {
+        jump();
+    }
+});
+
+// Rozpoczęcie gry
+let animationId;
+createObstacle();
+animate();
+
 </script>
 
 </body>
