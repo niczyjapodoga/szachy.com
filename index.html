@@ -59,6 +59,13 @@
             font-weight: bold;
             color: #007BFF;
         }
+        .join-game-section {
+            margin-top: 20px;
+        }
+        #joinMessage {
+            color: green;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -75,10 +82,17 @@
 </section>
 
 <section class="invite-section">
-    <h3>Dołącz do gry:</h3>
-    <p>Wprowadź zaproszenie lub stwórz nową grę!</p>
+    <h3>Stwórz zaproszenie do gry:</h3>
     <button class="button" onclick="generateInviteCode()">Stwórz zaproszenie</button>
     <p id="inviteCode"></p>
+</section>
+
+<section class="join-game-section">
+    <h3>Dołącz do gry:</h3>
+    <p>Wprowadź kod zaproszenia, aby dołączyć do gry:</p>
+    <input type="text" id="inviteInput" placeholder="Wpisz kod zaproszenia">
+    <button class="button" onclick="joinGame()">Dołącz</button>
+    <p id="joinMessage"></p>
 </section>
 
 <script>
@@ -106,6 +120,19 @@ function generateChessboard() {
         if (i % 8 === 7) {
             isBlack = !isBlack;
         }
+    }
+}
+
+// Funkcja do dołączania do gry
+function joinGame() {
+    const inputCode = document.getElementById('inviteInput').value.trim().toUpperCase();
+    const inviteCode = document.getElementById('inviteCode').innerText.replace("Twój kod zaproszenia: ", "");
+
+    if (inputCode === inviteCode) {
+        document.getElementById('joinMessage').innerText = "Dołączono do gry!";
+    } else {
+        document.getElementById('joinMessage').innerText = "Niepoprawny kod zaproszenia. Spróbuj ponownie.";
+        document.getElementById('joinMessage').style.color = "red";
     }
 }
 
