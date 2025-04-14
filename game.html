@@ -5,7 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gra w Szachy</title>
     <style>
-        /* Stylizowanie strony z szachownicą */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            text-align: center;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+        }
+        .chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 1px;
+            margin: 20px auto;
+            width: 408px;
+            height: 408px;
+            border: 1px solid #000;
+        }
+        .square {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            border: 1px solid #ccc;
+        }
+        .black {
+            background-color: #000;
+            color: white;
+        }
+        .white {
+            background-color: #fff;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -21,32 +69,14 @@
     </div>
 </section>
 
+<section>
+    <button class="button" onclick="startGame()">Rozpocznij grę</button>
+</section>
+
 <script>
 // Pobieramy kod zaproszenia z URL
-const inviteCode = new URLSearchParams(window.location.search).get("inviteCode");
-
-// Przykładowa konfiguracja WebSocket
-const socket = new WebSocket('ws://twoj-serwer-websocket'); // Zastąp odpowiednim serwerem
-
-// Otwarcie połączenia
-socket.onopen = function() {
-    console.log("Połączono z serwerem WebSocket.");
-
-    // Wyślij kod zaproszenia do serwera
-    socket.send(JSON.stringify({ type: 'join_game', code: inviteCode }));
-};
-
-// Obsługuje wiadomości z serwera
-socket.onmessage = function(event) {
-    const data = JSON.parse(event.data);
-
-    if (data.type === 'game_start') {
-        // Rozpoczynamy grę
-        generateChessboard();
-    }
-
-    // Możesz tu również dodać logikę do aktualizowania szachownicy o ruchy graczy
-};
+const urlParams = new URLSearchParams(window.location.search);
+const inviteCode = urlParams.get('inviteCode');
 
 // Funkcja generująca szachownicę
 function generateChessboard() {
@@ -68,6 +98,19 @@ function generateChessboard() {
         }
     }
 }
+
+// Funkcja rozpoczynająca grę
+function startGame() {
+    alert("Gra rozpoczyna się teraz!"); // Tylko przykładowa akcja
+    // Możesz dodać dodatkową logikę, aby np. rozpocząć ruchy szachów
+}
+
+// Inicjalizacja szachownicy po załadowaniu strony
+window.onload = function() {
+    generateChessboard();
+    console.log("Kod zaproszenia: ", inviteCode);  // Wyświetla kod zaproszenia w konsoli
+};
+
 </script>
 
 </body>
