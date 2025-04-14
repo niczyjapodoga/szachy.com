@@ -108,6 +108,9 @@
 function generateInviteCode() {
     const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     document.getElementById('inviteCode').innerText = "Twój kod zaproszenia: " + inviteCode;
+
+    // Zapisz kod zaproszenia do localStorage
+    localStorage.setItem('inviteCode', inviteCode);
 }
 
 // Funkcja do generowania szachownicy
@@ -134,7 +137,7 @@ function generateChessboard() {
 // Funkcja do dołączania do gry
 function joinGame() {
     const inputCode = document.getElementById('inviteInput').value.trim().toUpperCase();
-    const inviteCode = document.getElementById('inviteCode').innerText.replace("Twój kod zaproszenia: ", "");
+    const inviteCode = localStorage.getItem('inviteCode'); // Pobierz zaproszenie z localStorage
 
     if (inputCode === inviteCode) {
         document.getElementById('joinMessage').innerText = "Dołączono do gry!";
@@ -153,4 +156,3 @@ window.onload = function() {
 
 </body>
 </html>
-
