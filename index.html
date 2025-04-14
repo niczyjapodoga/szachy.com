@@ -140,8 +140,8 @@ function joinGame() {
     const inviteCode = localStorage.getItem('inviteCode'); // Pobierz zaproszenie z localStorage
 
     if (inputCode === inviteCode) {
-        document.getElementById('joinMessage').innerText = "Dołączono do gry!";
-        document.getElementById('joinMessage').style.color = "green";
+        // Jeśli kod jest poprawny, przekierowanie na stronę gry
+        window.location.href = "game.html?inviteCode=" + inputCode;  // Link do strony gry
     } else {
         document.getElementById('joinMessage').innerText = "Niepoprawny kod zaproszenia. Spróbuj ponownie.";
         document.getElementById('joinMessage').style.color = "red";
