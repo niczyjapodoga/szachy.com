@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biedne Chess</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            text-align: center;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+        }
+        .chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 1px;
+            margin: 20px auto;
+            width: 408px;
+            height: 408px;
+        }
+        .square {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+        }
+        .black {
+            background-color: #000;
+            color: white;
+        }
+        .white {
+            background-color: #fff;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .invite-section {
+            margin-top: 20px;
+        }
+        .invite-code {
+            font-weight: bold;
+            color: #007BFF;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Biedne Chess - Graj w szachy online</h1>
+</header>
+
+<section>
+    <h2>Szachownica</h2>
+    <div class="chessboard" id="chessboard">
+        <!-- Szachownica będzie generowana dynamicznie -->
+    </div>
+</section>
+
+<section class="invite-section">
+    <h3>Dołącz do gry:</h3>
+    <p>Wprowadź zaproszenie lub stwórz nową grę!</p>
+    <button class="button" onclick="generateInviteCode()">Stwórz zaproszenie</button>
+    <p id="inviteCode"></p>
+</section>
+
+<script>
+// Funkcja do generowania zaproszenia
+function generateInviteCode() {
+    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    document.getElementById('inviteCode').innerText = "Twój kod zaproszenia: " + inviteCode;
+}
+
+// Funkcja do generowania szachownicy
+function generateChessboard() {
+    const chessboard = document.getElementById('chessboard');
+    let isBlack = false;
+
+    for (let i = 0; i < 64; i++) {
+        const square = document.createElement('div');
+        square.classList.add('square');
+        if (isBlack) {
+            square.classList.add('black');
+        } else {
+            square.classList.add('white');
+        }
+        chessboard.appendChild(square);
+        isBlack = !isBlack;
+        if (i % 8 === 7) {
+            isBlack = !isBlack;
+        }
+    }
+}
+
+// Inicjalizacja szachownicy po załadowaniu strony
+window.onload = function() {
+    generateChessboard();
+};
+</script>
+
+</body>
+</html>
