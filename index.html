@@ -1,141 +1,126 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kółko i Krzyżyk Online</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            margin: 0;
-        }
-        .board {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-template-rows: repeat(3, 100px);
-            gap: 5px;
-            border: 2px solid #333;
-        }
-        .cell {
-            width: 100px;
-            height: 100px;
-            background-color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2em;
-            cursor: pointer;
-            border: 1px solid #ddd;
-        }
-        .cell.taken {
-            pointer-events: none;
-        }
-        .status {
-            margin-top: 20px;
-            font-size: 1.5em;
-            font-weight: bold;
-        }
-        .status.winner {
-            color: green;
-        }
-        .status.draw {
-            color: red;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Szachy z AI</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css"/>
+
+<style>
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: Arial;
+    background: #1e1e1e;
+    color: white;
+}
+#board {
+    width: 400px;
+    margin-top: 20px;
+}
+</style>
 </head>
 <body>
 
-<div>
-    <h1 style="text-align: center;">Everybody otwieramy instrukcje str 56</h1>
-    <div class="board" id="board">
-        <!-- Komórki planszy -->
-    </div>
-    <div class="status" id="status">Tura gracza X</div>
-</div>
+<h1>♟️ Szachy z AI</h1>
+<div id="board"></div>
+
+<script src="https://unpkg.com/chess.js@1.0.0/chess.min.js"></script>
+<script src="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
 
 <script>
-// Inicjalizacja gry
-let currentPlayer = 'X'; // Gracz zaczyna od X
-let gameBoard = ['', '', '', '', '', '', '', '', '']; // Plansza
-let gameOver = false;
+const game = new Chess();
 
-// Funkcja rysująca planszę
-function drawBoard() {
-    const board = document.getElementById('board');
-    board.innerHTML = ''; // Wyczyść planszę
+const board = Chessboard('board', {
+    draggable: true,
+    position: 'start',
+    onDrop: onDrop
+});
 
-    gameBoard.forEach((cell, index) => {
-        const div = document.createElement('div');
-        div.classList.add('cell');
-        if (cell !== '') {
-            div.textContent = cell;
-            div.classList.add('taken');
-        }
-        div.addEventListener('click', () => handleClick(index));
-        board.appendChild(div);
+function onDrop(source, target) {
+    let move = game.move({
+        from: source,
+        to: target,
+        promotion: 'q'
     });
+
+    if (move === null) return 'snapback';
+
+    setTimeout(makeAIMove, 250);
 }
 
-// Funkcja obsługująca kliknięcia w komórki
-function handleClick(index) {
-    if (gameBoard[index] === '' && !gameOver) {
-        gameBoard[index] = currentPlayer;
-        drawBoard();
-        checkWinner();
-        currentPlayer = currentPlayer === 'X' ? 'O' : 'X'; // Zmiana gracza
-        document.getElementById('status').textContent = `Tura gracza ${currentPlayer}`;
-    }
+function makeAIMove() {
+    let bestMove = minimaxRoot(2, game, true);
+    game.move(bestMove);
+    board.position(game.fen());
 }
 
-// Funkcja sprawdzająca zwycięzcę
-function checkWinner() {
-    // Możliwe linie zwycięskie
-    const winPatterns = [
-        [0, 1, 2], // poziom
-        [3, 4, 5], // poziom
-        [6, 7, 8], // poziom
-        [0, 3, 6], // pion
-        [1, 4, 7], // pion
-        [2, 5, 8], // pion
-        [0, 4, 8], // skosy
-        [2, 4, 6], // skosy
-    ];
+function minimaxRoot(depth, game, isMaximisingPlayer) {
+    let moves = game.moves();
+    let bestValue = -9999;
+    let bestMove = null;
 
-    for (const pattern of winPatterns) {
-        const [a, b, c] = pattern;
-        if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
-            gameOver = true;
-            document.getElementById('status').textContent = `Gracz ${gameBoard[a]} wygrał!`;
-            document.getElementById('status').classList.add('winner');
-            return;
+    for (let move of moves) {
+        game.move(move);
+        let value = minimax(depth - 1, game, -10000, 10000, false);
+        game.undo();
+
+        if (value > bestValue) {
+            bestValue = value;
+            bestMove = move;
         }
     }
+    return bestMove;
+}
 
-    // Sprawdzanie remisu
-    if (!gameBoard.includes('')) {
-        gameOver = true;
-        document.getElementById('status').textContent = 'Remis!';
-        document.getElementById('status').classList.add('draw');
+function minimax(depth, game, alpha, beta, isMaximisingPlayer) {
+    if (depth === 0) return evaluateBoard(game.board());
+
+    let moves = game.moves();
+
+    if (isMaximisingPlayer) {
+        let maxEval = -9999;
+        for (let move of moves) {
+            game.move(move);
+            let eval = minimax(depth - 1, game, alpha, beta, false);
+            game.undo();
+            maxEval = Math.max(maxEval, eval);
+            alpha = Math.max(alpha, eval);
+            if (beta <= alpha) break;
+        }
+        return maxEval;
+    } else {
+        let minEval = 9999;
+        for (let move of moves) {
+            game.move(move);
+            let eval = minimax(depth - 1, game, alpha, beta, true);
+            game.undo();
+            minEval = Math.min(minEval, eval);
+            beta = Math.min(beta, eval);
+            if (beta <= alpha) break;
+        }
+        return minEval;
     }
 }
 
-// Funkcja resetująca grę
-function resetGame() {
-    gameBoard = ['', '', '', '', '', '', '', '', ''];
-    currentPlayer = 'X';
-    gameOver = false;
-    document.getElementById('status').textContent = `Tura gracza ${currentPlayer}`;
-    document.getElementById('status').classList.remove('winner', 'draw');
-    drawBoard();
-}
+function evaluateBoard(board) {
+    const values = {
+        p: 10, n: 30, b: 30, r: 50, q: 90, k: 900
+    };
 
-// Funkcja uruchamiająca grę
-drawBoard();
+    let total = 0;
+    for (let row of board) {
+        for (let piece of row) {
+            if (piece) {
+                let value = values[piece.type];
+                total += piece.color === 'w' ? value : -value;
+            }
+        }
+    }
+    return total;
+}
 </script>
 
 </body>
