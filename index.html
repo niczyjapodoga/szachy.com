@@ -2,72 +2,75 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8" />
-<title>Szachy (kliknij, by grać) — AI, czas, poziom</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Szachy z AI — pełny kod</title>
 <style>
   :root{
+    --bg:#0b1220;
+    --card:#0f1724;
+    --muted:#9fb0c8;
     --light:#f0d9b5;
     --dark:#b58863;
     --accent:#2b8cff;
-    --bg:#0f1720;
-    --panel:#111827;
-    --text:#e6eef6;
   }
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter, Arial, sans-serif}
-  .app{max-width:980px;margin:20px auto;padding:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,0.7)}
-  h1{margin:0 0 8px 0;font-size:20px}
-  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-  select,button{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:var(--panel);color:var(--text);font-size:14px}
-  #boardWrap{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+  html,body{height:100%;margin:0;background:var(--bg);color:#dbe9fb;font-family:Inter,Segoe UI,Roboto,Arial;}
+  .wrap{max-width:1000px;margin:20px auto;padding:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);}
+  h1{margin:0 0 12px 0;font-size:20px;color:#e6f2ff}
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  select,button{background:var(--card);border:1px solid rgba(255,255,255,0.03);color:var(--muted);padding:8px;border-radius:8px;font-size:14px}
+  button.primary{background:var(--accent);color:#04233a}
+  .layout{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+  /* board */
   .board{
-    display:grid;
-    grid-template-columns:repeat(8,56px);
-    grid-template-rows:repeat(8,56px);
-    width:448px;
-    height:448px;
-    border-radius:8px;
-    overflow:hidden;
-    box-shadow:0 8px 30px rgba(0,0,0,0.6);
-    user-select:none;
+    width:480px;height:480px;display:grid;
+    grid-template-columns:repeat(8,1fr);
+    grid-template-rows:repeat(8,1fr);
+    border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0f1724,#071126);
+    box-shadow: 0 10px 30px rgba(2,6,23,0.6);
   }
   .square{
-    width:56px;height:56px;display:flex;justify-content:center;align-items:center;font-size:32px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:36px;cursor:pointer;
+    user-select:none;
   }
-  .square.light{background:var(--light);color:#202020}
+  .square.light{background:var(--light);color:#222}
   .square.dark{background:var(--dark);color:white}
-  .square.selected{outline:3px solid var(--accent);box-sizing:border-box}
+  .square.selected{outline:3px solid rgba(43,140,255,0.9);box-sizing:border-box}
   .square.hint{box-shadow:inset 0 0 0 3px rgba(43,140,255,0.18)}
-  .sidePanel{min-width:240px;display:flex;flex-direction:column;gap:12px}
-  .timers{font-size:16px}
-  .buttons{display:flex;gap:8px;flex-wrap:wrap}
-  .status{font-size:14px;color:#cbd5e1}
-  .pgn{background:#0b1220;padding:8px;border-radius:8px;font-family:monospace;font-size:13px;max-height:200px;overflow:auto}
-  @media (max-width:800px){
-    .board{transform:scale(0.8);transform-origin:left top}
+  .side{
+    min-width:300px;display:flex;flex-direction:column;gap:10px;
+  }
+  .timers{font-size:16px;color:var(--muted)}
+  .status{font-size:14px;color:#cbd6e6}
+  .pgn{background:#071022;padding:8px;border-radius:8px;font-family:monospace;font-size:13px;min-height:64px;max-height:220px;overflow:auto;color:#cfe8ff}
+  .small{font-size:13px;color:var(--muted)}
+  .footer{margin-top:12px;font-size:12px;color:#9fb0c8}
+  @media (max-width:880px){
+    .layout{flex-direction:column;align-items:center}
   }
 </style>
 </head>
 <body>
-<div class="app">
-  <h1>♟️ Szachy — kliknij, by zagrać</h1>
+<div class="wrap">
+  <h1>♟️ Szachy — wybierz opcje i graj</h1>
 
   <div class="controls">
     <label>Strona:
-      <select id="side">
+      <select id="sideSelect">
         <option value="w">Białe</option>
         <option value="b">Czarne</option>
       </select>
     </label>
 
     <label>Poziom AI:
-      <select id="level">
+      <select id="levelSelect">
         <option value="1">Łatwy</option>
-        <option value="2">Średni</option>
+        <option value="2" selected>Średni</option>
         <option value="3">Trudny</option>
       </select>
     </label>
 
     <label>Czas (min):
-      <select id="time">
+      <select id="timeSelect">
         <option value="1">1</option>
         <option value="3" selected>3</option>
         <option value="5">5</option>
@@ -75,83 +78,90 @@
       </select>
     </label>
 
-    <div class="buttons">
-      <button id="startBtn">Start</button>
-      <button id="restartBtn">Restart</button>
-    </div>
+    <button id="startBtn" class="primary">Start</button>
+    <button id="restartBtn">Restart</button>
+    <button id="undoBtn">Cofnij ruch</button>
   </div>
 
-  <div id="boardWrap">
+  <div class="layout">
     <div id="board" class="board" aria-label="Plansza szachowa"></div>
 
-    <div class="sidePanel">
+    <div class="side">
       <div class="timers">
-        ⚪ <span id="whiteTime">-</span><br>
-        ⚫ <span id="blackTime">-</span>
+        ⚪ <span id="whiteTimer">-</span><br>
+        ⚫ <span id="blackTimer">-</span>
       </div>
 
       <div class="status" id="status">Status: gotowy</div>
 
       <div>
-        <strong>PGN:</strong>
-        <div class="pgn" id="pgnArea">—</div>
+        <strong>PGN</strong>
+        <div id="pgn" class="pgn">—</div>
       </div>
 
-      <div style="font-size:13px;color:#9aa7bb">
-        Instrukcja: kliknij figurę, potem pole docelowe. Jeśli grasz czarnymi — plansza zostanie obrócona.
-      </div>
+      <div class="small">Instrukcja: kliknij figurę, potem pole docelowe. Jeśli wybierzesz czarne — plansza zostanie obrócona. Promotion domyślnie na hetmana (Q).</div>
     </div>
   </div>
+
+  <div class="footer">Kod wykorzystuje <code>chess.js</code> (reguły). AI: minimax z alpha-beta. Jeśli chcesz silniejszego AI — mogę dodać Stockfish WASM.</div>
 </div>
 
-<!-- chess.js (logika) -->
-<script src="https://unpkg.com/chess.js@1.0.0/chess.min.js"></script>
+<!-- chess.js (reguły gry) - używamy jsDelivr CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/chess.min.js"></script>
 
 <script>
-/* ======= PROSTE, STABILNE SZACHY (klik) =======
-   - plansza rysowana z Unicode (nie ma zewn. obrazków)
-   - używa chess.js do reguł i ruchów
-   - wybór koloru, czasu, poziomu
-   - AI: minimax z alpha-beta (głębia zależna od poziomu)
-   - klik: wybierz figurę -> wybierz pole
+/* Pełny skrypt gry:
+ - render planszy z Unicode figur
+ - obsługa klików (select -> target)
+ - timery
+ - AI minimax (poziomy 1..3)
+ - PGN + status + restart + undo
 */
 
+// --- KONFIG ---
+const UNICODE = {
+  w: { p:'♙', r:'♖', n:'♘', b:'♗', q:'♕', k:'♔' },
+  b: { p:'♟', r:'♜', n:'♞', b:'♝', q:'♛', k:'♚' }
+};
+
+// elementy UI
 const boardEl = document.getElementById('board');
 const statusEl = document.getElementById('status');
-const pgnEl = document.getElementById('pgnArea');
-const whiteTimeEl = document.getElementById('whiteTime');
-const blackTimeEl = document.getElementById('blackTime');
+const pgnEl = document.getElementById('pgn');
+const whiteTimerEl = document.getElementById('whiteTimer');
+const blackTimerEl = document.getElementById('blackTimer');
+const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
+const undoBtn = document.getElementById('undoBtn');
 
-let game = new Chess();
-let playerColor = 'w';   // 'w' lub 'b'
+// controls
+const sideSelect = document.getElementById('sideSelect');
+const levelSelect = document.getElementById('levelSelect');
+const timeSelect = document.getElementById('timeSelect');
+
+// zmienne gry
+let game = null;               // Chess() object
+let playerColor = 'w';         // 'w' or 'b'
 let aiColor = 'b';
-let aiDepth = 1;
+let aiLevel = 2;               // depth mapping
+let clocks = { w:0, b:0 };     // seconds
+let timerInterval = null;
+let running = false;
 
 let selectedSquare = null;
 let validTargets = [];
 
-let timers = { w:0, b:0 };
-let timerInterval = null;
-let gameRunning = false;
-
-// Unicode pieces
-const PIECE_UNICODE = {
-  w: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' },
-  b: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' }
-};
-
-// create 8x8 squares (we re-render content only)
-function buildEmptyBoard() {
+// --- ZBUDUJ PUSTĄ PLANSZĘ (static squares) ---
+function buildSquares(){
   boardEl.innerHTML = '';
-  // board squares from 8 to 1 top->bottom; files a->h left->right
-  for (let rank = 8; rank >= 1; rank--) {
-    for (let file = 0; file < 8; file++) {
+  // tworzymy 8x8 od rank 8 -> 1 (top->bottom)
+  for(let r=8; r>=1; r--){
+    for(let f=0; f<8; f++){
+      const fileChar = String.fromCharCode('a'.charCodeAt(0) + f);
+      const coord = fileChar + r;
       const sq = document.createElement('div');
-      const fileChar = String.fromCharCode('a'.charCodeAt(0) + file);
-      const coord = fileChar + rank;
       sq.className = 'square';
-      // color
-      const isLight = ((rank + file) % 2 === 0);
+      const isLight = ((r + f) % 2 === 0);
       sq.classList.add(isLight ? 'light' : 'dark');
       sq.dataset.square = coord;
       sq.addEventListener('click', onSquareClick);
@@ -160,102 +170,136 @@ function buildEmptyBoard() {
   }
 }
 
-// render pieces according to game.fen()
-function renderBoard() {
-  // If player chose black, flip board by reversing order of squares in DOM visually
-  const orientation = playerColor === 'w' ? 1 : -1;
-  // We'll map each square element by coordinate
+// renderuje figury i podświetlenia based on game state
+function render(){
+  // map elements by coord
   const squares = {};
   boardEl.querySelectorAll('.square').forEach(el => squares[el.dataset.square] = el);
 
-  // clear selections/hints and text
-  Object.values(squares).forEach(el => { el.classList.remove('selected','hint'); el.textContent = ''; });
+  // clear all
+  Object.values(squares).forEach(el => { el.textContent=''; el.classList.remove('selected','hint'); });
 
-  const board = game.board(); // 8x8 array, [0] is rank 8
-  for (let r = 0; r < 8; r++) {
-    for (let f = 0; f < 8; f++) {
+  // fill pieces from chess.js board()
+  if (!game) return;
+  const board = game.board(); // array[rank8..rank1][file a..h]
+  for(let r=0; r<8; r++){
+    for(let f=0; f<8; f++){
       const piece = board[r][f];
       if (!piece) continue;
       const rank = 8 - r;
-      const fileChar = String.fromCharCode('a'.charCodeAt(0)+f);
+      const fileChar = String.fromCharCode('a'.charCodeAt(0) + f);
       const coord = fileChar + rank;
       const el = squares[coord];
-      if (el) el.textContent = PIECE_UNICODE[piece.color][piece.type];
+      if (el) el.textContent = UNICODE[piece.color][piece.type];
     }
   }
 
   // highlight selected and hints
   if (selectedSquare) {
-    const sel = squares[selectedSquare];
-    if (sel) sel.classList.add('selected');
+    if (squares[selectedSquare]) squares[selectedSquare].classList.add('selected');
     validTargets.forEach(t => { if (squares[t]) squares[t].classList.add('hint'); });
   }
 
-  // update PGN and status
+  // PGN and status
   pgnEl.textContent = game.pgn() || '—';
-  statusEl.textContent = `Status: ${game.turn() === 'w' ? 'Ruch białych' : 'Ruch czarnych'}${game.in_check() ? ' — szach!' : ''}${game.game_over() ? ' — koniec gry' : ''}`;
+
+  let s = '';
+  if (game.in_checkmate()) s = 'Mat — koniec gry';
+  else if (game.in_draw()) s = 'Remis';
+  else s = (game.turn() === 'w' ? 'Ruch białych' : 'Ruch czarnych') + (game.in_check() ? ' — szach!' : '');
+  statusEl.textContent = 'Status: ' + s;
 }
 
-// handle click on a square
-function onSquareClick(e) {
-  if (!gameRunning) return;
+// klik na pole
+function onSquareClick(e){
+  if (!running) return;
   const sq = e.currentTarget.dataset.square;
+  // if not player's turn -> ignore
+  if (game.turn() !== playerColor) return;
 
-  // if nothing selected yet: try to select a piece belonging to the player
-  if (!selectedSquare) {
-    const piece = game.get(sq);
-    if (!piece) return;
-    if (piece.color !== playerColor) return; // can't pick opponent piece
-    // select and show valid moves
+  // if nothing selected: try select own piece
+  if (!selectedSquare){
+    const pc = game.get(sq);
+    if (!pc) return;
+    if (pc.color !== playerColor) return;
     selectedSquare = sq;
     const moves = game.moves({ square: sq, verbose: true });
     validTargets = moves.map(m => m.to);
-    renderBoard();
+    render();
     return;
   }
 
   // if clicked same square -> deselect
-  if (selectedSquare === sq) {
-    selectedSquare = null; validTargets = []; renderBoard(); return;
-  }
-
-  // if target is a valid move, try to make move
-  if (validTargets.includes(sq)) {
-    const move = game.move({ from: selectedSquare, to: sq, promotion: 'q' });
-    selectedSquare = null; validTargets = [];
-    renderBoard();
-
-    // after player's move, check game over or start AI move
-    if (game.game_over()) {
-      handleGameOver();
-      return;
-    }
-
-    // AI move (with slight delay)
-    setTimeout(() => {
-      if (!game.game_over()) makeAIMove();
-    }, 200);
+  if (selectedSquare === sq){
+    selectedSquare = null; validTargets = []; render();
     return;
   }
 
-  // else clicked some other square: try selecting new own piece
-  const piece = game.get(sq);
-  if (piece && piece.color === playerColor) {
+  // if clicked valid target -> make move
+  if (validTargets.includes(sq)){
+    // handle promotion: if pawn reaching last rank -> prompt or default to queen
+    let moveObj = { from: selectedSquare, to: sq, promotion: 'q' };
+    // attempt move
+    const made = game.move(moveObj);
+    selectedSquare = null; validTargets = []; render();
+    if (made){
+      afterPlayerMove();
+    } else {
+      // invalid move fallback
+      render();
+    }
+    return;
+  }
+
+  // else: try select other own piece
+  const pc = game.get(sq);
+  if (pc && pc.color === playerColor){
     selectedSquare = sq;
     validTargets = game.moves({ square: sq, verbose: true }).map(m => m.to);
-    renderBoard();
+    render();
   } else {
-    // click on other square -> clear selection
-    selectedSquare = null; validTargets = []; renderBoard();
+    selectedSquare = null; validTargets = []; render();
   }
 }
 
-// AI: minimax with alpha-beta; evaluation by material (simple)
-function evaluateBoard(board) {
+// after player's move
+function afterPlayerMove(){
+  render();
+  // check end
+  if (game.game_over()){
+    finishGame();
+    return;
+  }
+  // AI move
+  setTimeout(()=> {
+    if (!game.game_over()) makeAIMove();
+  }, 250);
+}
+
+// AI: wrapper
+function makeAIMove(){
+  if (game.game_over()) { finishGame(); return; }
+  // choose depth based on aiLevel (1->2 ply, 2->3-4 ply, 3->4-5 ply)
+  const depthMap = {1: 2, 2: 3, 3: 4};
+  const depth = depthMap[aiLevel] || 3;
+  // find best move (minimax)
+  const best = findBestMove(depth, aiColor);
+  if (!best){
+    finishGame();
+    return;
+  }
+  game.move({from: best.from, to: best.to, promotion: best.promotion || 'q'});
+  render();
+  if (game.game_over()) finishGame();
+}
+
+// --- MINIMAX (alpha-beta) ---
+function evaluateBoard(boardArray){
+  // material weights
   const values = { p:100, n:320, b:330, r:500, q:900, k:20000 };
   let score = 0;
-  for (let r of board) {
-    for (let p of r) {
+  for (let r of boardArray){
+    for (let p of r){
       if (!p) continue;
       const v = values[p.type] || 0;
       score += (p.color === 'w') ? v : -v;
@@ -263,18 +307,20 @@ function evaluateBoard(board) {
   }
   return score;
 }
-function evaluateForAI(board) {
-  const raw = evaluateBoard(board);
+function evaluateForAI(boardArray){
+  // return score from AI's perspective (higher = better for AI)
+  const raw = evaluateBoard(boardArray);
   return (aiColor === 'w') ? raw : -raw;
 }
 
-function minimax(depth, alpha, beta, isMaximizing) {
-  if (depth === 0 || game.game_over()) return evaluateForAI(game.board());
-
+function minimax(depth, alpha, beta, isMaximizingPlayer){
+  if (depth === 0 || game.game_over()){
+    return evaluateForAI(game.board());
+  }
   const moves = game.moves({ verbose: true });
-  if (isMaximizing) {
+  if (isMaximizingPlayer){
     let maxEval = -Infinity;
-    for (let m of moves) {
+    for (let m of moves){
       game.move({from: m.from, to: m.to, promotion: m.promotion || 'q'});
       const eval = minimax(depth - 1, alpha, beta, false);
       game.undo();
@@ -285,7 +331,7 @@ function minimax(depth, alpha, beta, isMaximizing) {
     return maxEval;
   } else {
     let minEval = Infinity;
-    for (let m of moves) {
+    for (let m of moves){
       game.move({from: m.from, to: m.to, promotion: m.promotion || 'q'});
       const eval = minimax(depth - 1, alpha, beta, true);
       game.undo();
@@ -297,115 +343,140 @@ function minimax(depth, alpha, beta, isMaximizing) {
   }
 }
 
-function findBestMove(depth) {
+function findBestMove(depth, color){
+  // We assume it's AI's turn when calling this
   const moves = game.moves({ verbose: true });
   if (moves.length === 0) return null;
-  let bestMove = moves[0];
+  let bestMove = null;
   let bestValue = -Infinity;
-  for (let m of moves) {
+  for (let m of moves){
+    // only consider moves of the correct color
+    // (game.turn() should match color, but double-check)
     game.move({from: m.from, to: m.to, promotion: m.promotion || 'q'});
     const value = minimax(depth - 1, -Infinity, Infinity, false);
     game.undo();
-    if (value > bestValue) { bestValue = value; bestMove = m; }
+    // add small random tie-breaker to vary play
+    const rand = (Math.random() - 0.5) * 1e-6;
+    if (value + rand > bestValue){
+      bestValue = value + rand;
+      bestMove = m;
+    }
   }
   return bestMove;
 }
 
-function makeAIMove() {
-  if (game.game_over()) { handleGameOver(); return; }
-  // AI thinks for short time depending on level
-  const depth = aiDepth + 0; // easy=1, medium=2, hard=3
-  const m = findBestMove(depth);
-  if (!m) { handleGameOver(); return; }
-  game.move({from: m.from, to: m.to, promotion: m.promotion || 'q'});
-  renderBoard();
-  if (game.game_over()) handleGameOver();
-}
-
-// timers
-function startTimers(totalSeconds) {
-  timers.w = timers.b = totalSeconds;
-  updateTimerDisplay();
-  clearInterval(timerInterval);
+// --- TIMERS ---
+function startTimers(totalSeconds){
+  clocks.w = clocks.b = totalSeconds;
+  stopTimers();
   timerInterval = setInterval(() => {
-    if (!gameRunning) return;
-    const turn = game.turn(); // 'w' or 'b'
-    timers[turn]--;
-    updateTimerDisplay();
-    if (timers.w <= 0 || timers.b <= 0) {
-      gameRunning = false;
+    if (!running) return;
+    const t = game.turn(); // 'w' or 'b'
+    clocks[t]--;
+    updateTimers();
+    if (clocks.w <= 0 || clocks.b <= 0){
+      running = false;
       clearInterval(timerInterval);
-      const loser = timers.w <= 0 ? 'w' : 'b';
-      const winner = loser === 'w' ? 'b' : 'w';
-      statusEl.textContent = `Koniec czasu — wygrały ${winner === 'w' ? 'Białe' : 'Czarne'}`;
+      const loser = clocks.w <= 0 ? 'w' : 'b';
+      const winner = loser === 'w' ? 'Czarne' : 'Białe';
+      statusEl.textContent = `Koniec czasu — wygrały ${winner}`;
     }
   }, 1000);
+  updateTimers();
 }
-function updateTimerDisplay(){ whiteTimeEl.textContent = formatTime(timers.w); blackTimeEl.textContent = formatTime(timers.b); }
-function formatTime(sec){ if (sec<0) sec=0; const m=Math.floor(sec/60), s=sec%60; return `${m}:${String(s).padStart(2,'0')}`; }
+function updateTimers(){
+  whiteTimerEl.textContent = formatTime(clocks.w);
+  blackTimerEl.textContent = formatTime(clocks.b);
+}
+function formatTime(s){
+  if (s < 0) s = 0;
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+function stopTimers(){
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
 
-// start / restart
-function startGame() {
+// --- GAME FLOW: start / restart / undo / finish ---
+function startGame(){
   // read settings
-  const sideSel = document.getElementById('side').value;
-  const levelSel = parseInt(document.getElementById('level').value,10);
-  const timeMin = parseInt(document.getElementById('time').value,10);
-
-  playerColor = sideSel;
+  playerColor = sideSelect.value === 'w' ? 'w' : 'b';
   aiColor = playerColor === 'w' ? 'b' : 'w';
-  aiDepth = levelSel; // 1..3
-  const seconds = timeMin * 60;
+  aiLevel = parseInt(levelSelect.value, 10) || 2;
+  const minutes = parseInt(timeSelect.value, 10) || 3;
 
+  // init chess.js
   game = new Chess();
-  selectedSquare = null; validTargets = [];
-  buildEmptyBoard();
-  // if player is black, flip visual order of squares by reversing DOM order
+  buildSquares();
+  // if player is black => flip visual DOM so that a8 is top-left? We'll rotate by reversing squares:
   if (playerColor === 'b') flipBoardDOM();
-  renderBoard();
+
+  selectedSquare = null; validTargets = [];
+  render();
 
   // timers
-  startTimers(seconds);
+  startTimers(minutes * 60);
+  running = true;
 
-  gameRunning = true;
-  statusEl.textContent = 'Rozpoczęto grę';
-
-  // if player chose black -> AI (white) starts
-  if (playerColor === 'b') {
-    setTimeout(() => { makeAIMove(); }, 300);
+  // if player picked black, AI (white) moves first
+  if (playerColor === 'b'){
+    // small delay so UI updates
+    setTimeout(() => {
+      makeAIMove();
+    }, 300);
   }
+
+  statusEl.textContent = 'Status: gra rozpoczęta';
 }
 
-function flipBoardDOM(){
-  // reverse children so that a8 is top-left when player is black
-  const nodes = Array.from(boardEl.children);
-  boardEl.innerHTML = '';
-  nodes.reverse().forEach(n => boardEl.appendChild(n));
+function restartGame(){
+  stopTimers();
+  startGame();
 }
 
-function handleGameOver() {
-  gameRunning = false;
-  clearInterval(timerInterval);
-  if (game.in_checkmate()) {
+function undoMove(){
+  if (!game) return;
+  // allow undo both last moves (player + AI)
+  game.undo();
+  game.undo();
+  selectedSquare = null; validTargets = [];
+  render();
+}
+
+function finishGame(){
+  running = false;
+  stopTimers();
+  render();
+  if (game.in_checkmate()){
     const winner = game.turn() === 'w' ? 'Czarne' : 'Białe';
     statusEl.textContent = `Mat — wygrały ${winner}`;
-  } else if (game.in_draw()) {
+  } else if (game.in_draw()){
     statusEl.textContent = 'Remis';
   } else {
     statusEl.textContent = 'Koniec gry';
   }
 }
 
-// initial build
-buildEmptyBoard();
-renderBoard();
+// flip board DOM order so that bottom-left becomes a1 for black player
+function flipBoardDOM(){
+  const nodes = Array.from(boardEl.children);
+  boardEl.innerHTML = '';
+  nodes.reverse().forEach(n => boardEl.appendChild(n));
+}
 
-// buttons
-document.getElementById('startBtn').addEventListener('click', () => startGame());
-document.getElementById('restartBtn').addEventListener('click', () => {
-  // just restart with same settings
-  startGame();
+// --- INIT on load ---
+document.addEventListener('DOMContentLoaded', () => {
+  buildSquares();
+  // initial chess object for display (not running)
+  game = new Chess();
+  render();
+
+  // wire buttons
+  startBtn.addEventListener('click', () => startGame());
+  restartBtn.addEventListener('click', () => restartGame());
+  undoBtn.addEventListener('click', () => undoMove());
 });
-
 </script>
 </body>
 </html>
