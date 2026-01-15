@@ -9,37 +9,129 @@ href="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css"/>
 
 <style>
 body {
+    background: #121212;
+    color: white;
+    font-family: Arial;
     display: flex;
     flex-direction: column;
     align-items: center;
-    font-family: Arial;
-    background: #1e1e1e;
-    color: white;
 }
+
+#controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+select, button {
+    padding: 6px;
+    font-size: 14px;
+}
+
 #board {
-    width: 400px;
+    width: 420px;
     margin-top: 20px;
+}
+
+#timers {
+    margin-top: 10px;
+    font-size: 18px;
 }
 </style>
 </head>
 <body>
 
 <h1>♟️ Szachy z AI</h1>
+
+<div id="controls">
+    <select id="side">
+        <option value="white">Białe</option>
+        <option value="black">Czarne</option>
+    </select>
+
+    <select id="level">
+        <option value="1">AI łatwe</option>
+        <option value="2">AI średnie</option>
+        <option value="3">AI trudne</option>
+    </select>
+
+    <select id="time">
+        <option value="60">1 minuta</option>
+        <option value="180">3 minuty</option>
+        <option value="300">5 minut</option>
+        <option value="600">10 minut</option>
+    </select>
+
+    <button onclick="startGame()">Start</button>
+</div>
+
+<div id="timers">
+    ⚪ <span id="whiteTime"></span> | ⚫ <span id="blackTime"></span>
+</div>
+
 <div id="board"></div>
 
 <script src="https://unpkg.com/chess.js@1.0.0/chess.min.js"></script>
 <script src="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
 
 <script>
-const game = new Chess();
+let board, game;
+let playerColor = 'w';
+let aiDepth = 1;
+let whiteTime, blackTime;
+let timerInterval;
 
-const board = Chessboard('board', {
-    draggable: true,
-    position: 'start',
-    onDrop: onDrop
-});
+function startGame() {
+    game = new Chess();
+
+    playerColor = document.getElementById("side").value === "white" ? 'w' : 'b';
+    aiDepth = parseInt(document.getElementById("level").value);
+
+    let startTime = parseInt(document.getElementById("time").value);
+    whiteTime = blackTime = startTime;
+
+    updateTimers();
+    clearInterval(timerInterval);
+    timerInterval = setInterval(updateClock, 1000);
+
+    board = Chessboard('board', {
+        draggable: true,
+        orientation: playerColor === 'w' ? 'white' : 'black',
+        position: 'start',
+        onDrop: onDrop
+    });
+
+    if (playerColor === 'b') setTimeout(makeAIMove, 500);
+}
+
+function updateClock() {
+    if (game.turn() === 'w') whiteTime--;
+    else blackTime--;
+
+    updateTimers();
+
+    if (whiteTime <= 0 || blackTime <= 0) {
+        alert("⏱️ Koniec czasu!");
+        clearInterval(timerInterval);
+    }
+}
+
+function updateTimers() {
+    document.getElementById("whiteTime").innerText = formatTime(whiteTime);
+    document.getElementById("blackTime").innerText = formatTime(blackTime);
+}
+
+function formatTime(sec) {
+    let m = Math.floor(sec / 60);
+    let s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
 
 function onDrop(source, target) {
+    if (game.turn() !== playerColor) return 'snapback';
+
     let move = game.move({
         from: source,
         to: target,
@@ -48,19 +140,22 @@ function onDrop(source, target) {
 
     if (move === null) return 'snapback';
 
-    setTimeout(makeAIMove, 250);
+    board.position(game.fen());
+    setTimeout(makeAIMove, 300);
 }
 
 function makeAIMove() {
-    let bestMove = minimaxRoot(2, game, true);
-    game.move(bestMove);
+    if (game.game_over()) return;
+
+    let move = minimaxRoot(aiDepth, game, true);
+    game.move(move);
     board.position(game.fen());
 }
 
-function minimaxRoot(depth, game, isMaximisingPlayer) {
-    let moves = game.moves();
-    let bestValue = -9999;
+function minimaxRoot(depth, game, isMax) {
     let bestMove = null;
+    let bestValue = -9999;
+    let moves = game.moves();
 
     for (let move of moves) {
         game.move(move);
@@ -75,12 +170,12 @@ function minimaxRoot(depth, game, isMaximisingPlayer) {
     return bestMove;
 }
 
-function minimax(depth, game, alpha, beta, isMaximisingPlayer) {
-    if (depth === 0) return evaluateBoard(game.board());
+function minimax(depth, game, alpha, beta, isMax) {
+    if (depth === 0) return evaluate(game.board());
 
     let moves = game.moves();
 
-    if (isMaximisingPlayer) {
+    if (isMax) {
         let maxEval = -9999;
         for (let move of moves) {
             game.move(move);
@@ -105,21 +200,19 @@ function minimax(depth, game, alpha, beta, isMaximisingPlayer) {
     }
 }
 
-function evaluateBoard(board) {
-    const values = {
-        p: 10, n: 30, b: 30, r: 50, q: 90, k: 900
-    };
+function evaluate(board) {
+    const values = { p:10, n:30, b:30, r:50, q:90, k:900 };
+    let score = 0;
 
-    let total = 0;
     for (let row of board) {
         for (let piece of row) {
             if (piece) {
-                let value = values[piece.type];
-                total += piece.color === 'w' ? value : -value;
+                let val = values[piece.type];
+                score += piece.color === playerColor ? val : -val;
             }
         }
     }
-    return total;
+    return score;
 }
 </script>
 
